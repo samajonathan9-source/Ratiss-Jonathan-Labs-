@@ -1,0 +1,7 @@
+__pycache__/
+.pytest_cache/
+artifacts/*.json
+!artifacts/.gitkeep
+!artifacts/bio_yeast_gse4987.json
+data/gse4987/raw/
+data/gse4987/source.zip
