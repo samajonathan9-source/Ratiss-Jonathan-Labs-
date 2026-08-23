@@ -20,3 +20,16 @@ def test_labs_documentation_figures_exist():
     assets = ROOT / "docs" / "assets"
     assert (assets / "berlin52-ratiss-inspection.png").is_file()
     assert (assets / "gse4987-association-heatmap.png").is_file()
+    assert (assets / "berlin52-topology-resilience.png").is_file()
+    assert (assets / "berlin52-drift-injection.png").is_file()
+
+
+def test_berlin52_resilience_keeps_observed_and_consensus_branches_separate():
+    document = json.loads((ROOT / "artifacts" / "berlin52_topology_resilience.json").read_text(encoding="utf-8"))
+    assert document["baseline"]["n_cities"] == 52
+    assert len(document["trajectory"]) == 10
+    assert document["resilience"]["first_observed_threshold_crossing_step"] == 5
+    assert document["resilience"]["first_consensus_core_threshold_crossing_step"] is None
+    step_five = document["trajectory"][5]
+    assert step_five["observed_topology"]["psig"] < document["resilience"]["collapse_threshold_P_sig"]
+    assert step_five["consensus_core_topology"]["psig"] > document["resilience"]["collapse_threshold_P_sig"]

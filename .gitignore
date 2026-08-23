@@ -3,5 +3,6 @@ __pycache__/
 artifacts/*.json
 !artifacts/.gitkeep
 !artifacts/bio_yeast_gse4987.json
+!artifacts/berlin52_topology_resilience.json
 data/gse4987/raw/
 data/gse4987/source.zip

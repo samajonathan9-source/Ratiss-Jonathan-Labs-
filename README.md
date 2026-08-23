@@ -25,6 +25,16 @@ Les points gris sont les 52 coordonnées de Berlin52. La ligne grise est une bas
 | Coût inspection Held–Karp | 4666.323392758 |
 | Coût baseline 52 villes | 8060.651582561 |
 
+## Berlin52 : dérive et résilience topologique
+
+![P sig observé et noyau consensus sous bruit](docs/assets/berlin52-topology-resilience.png)
+
+Un second protocole conserve l’artefact Berlin52 de référence intact, puis applique une dérive de coordonnées gaussienne cumulative, du bruit gaussien aux associations et des fausses arêtes à une copie observée. Le `P_sig` observé et le noyau de consensus temporel sont exportés en deux branches : le noyau est une médiane des matrices déjà observées, jamais une réécriture de la matrice bruitée.
+
+![Amplitude de la dérive et perturbations injectées](docs/assets/berlin52-drift-injection.png)
+
+La baseline vaut `P_sig=0.3806296964`; le seuil de rupture déclaré est `0.1903148482` (50 %). Dans cette exécution déterministe, la branche observée tombe à `0.1497961077` au pas 5 et franchit le seuil ; le noyau consensus vaut simultanément `0.4000637981` et ne le franchit à aucun pas. Il s’agit d’un stress test synthétique sur les coordonnées Berlin52 réelles, non d’un filtre garanti ni d’un avantage TSP.
+
 ## GSE4987 : associations de levure, pas diagnostic
 
 ![Heatmap d’association GSE4987](docs/assets/gse4987-association-heatmap.png)
@@ -46,10 +56,13 @@ flowchart LR
   A[Berlin52 coordinates] --> B[Geometric affinity]
   B --> C[Topology and support ranking]
   C --> D[Exact inspection route]
+  B --> I[Drift and observation noise]
+  I --> J[Observed P sig and consensus core]
   E[GSE4987 expression] --> F[Pearson association]
   F --> G[Declared bio adapter]
   D --> H[Versioned artifacts]
   G --> H
+  J --> H
 ```
 
 Le schéma complet est dans [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). Les deux branches convergent dans un contrat d’artefact mais gardent des unités, des sources et des limites différentes.
@@ -65,6 +78,12 @@ python3 -m pip install -e .
 PYTHONPATH=../ratiss-topological-decoherence-engine/src \
 python3 scripts/run_tsp_ratiss.py \
   --engine-src ../ratiss-topological-decoherence-engine/src
+
+PYTHONPATH=../ratiss-topological-decoherence-engine/src \
+python3 scripts/run_topology_resilience.py \
+  --engine-src ../ratiss-topological-decoherence-engine/src \
+  --input data/berlin52.tsp \
+  --output artifacts/berlin52_topology_resilience.json
 ```
 
 Pour l’axe bio, récupérer d’abord le fichier public indiqué dans [`data/gse4987/README.md`](data/gse4987/README.md), puis :
@@ -80,8 +99,6 @@ python3 scripts/run_bio_yeast.py \
 ```bash
 PYTHONPATH=../ratiss-topological-decoherence-engine/src python3 -m pytest -q
 python3 scripts/generate_docs_figures.py
-python3 -m json.tool artifacts/berlin52_ratiss_inspection.json >/dev/null
-python3 -m json.tool artifacts/bio_yeast_gse4987.json >/dev/null
 ```
 
 Les tests contrôlent le parsing Berlin52, la symétrie des affinités, le parsing des profils GSE4987 et la normalisation des corrélations. Les graphiques sont construits à partir des artefacts JSON versionnés, sans ajout manuel de points.
@@ -94,6 +111,8 @@ Les tests contrôlent le parsing Berlin52, la symétrie des affinités, le parsi
 | [`ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Flux Berlin52 et GSE4987 |
 | [`RESULTS.md`](docs/RESULTS.md) | Valeurs calculées, comparaison correcte et reproduction |
 | [`VISUAL_AUDIT.md`](docs/VISUAL_AUDIT.md) | Lecture vérifiée des graphiques |
+| [`RESILIENCE_MODE.md`](docs/RESILIENCE_MODE.md) | Contrat de dérive, bruit et seuils de rupture Berlin52 |
+| [`RESILIENCE_VISUAL_AUDIT.md`](docs/RESILIENCE_VISUAL_AUDIT.md) | Vérification des graphiques de résilience |
 | [`data/gse4987/README.md`](data/gse4987/README.md) | Procédure de téléchargement de la source bio publique |
 
 Distribué sous [licence MIT](LICENSE).

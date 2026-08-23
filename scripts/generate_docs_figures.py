@@ -22,10 +22,12 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--tsp", default="artifacts/berlin52_ratiss_inspection.json")
     parser.add_argument("--bio", default="artifacts/bio_yeast_gse4987.json")
+    parser.add_argument("--resilience", default="artifacts/berlin52_topology_resilience.json")
     parser.add_argument("--output-dir", default="docs/assets")
     args = parser.parse_args()
     tsp = json.loads(Path(args.tsp).read_text(encoding="utf-8"))
     bio = json.loads(Path(args.bio).read_text(encoding="utf-8"))
+    resilience = json.loads(Path(args.resilience).read_text(encoding="utf-8"))
     output = Path(args.output_dir)
     output.mkdir(parents=True, exist_ok=True)
     plt.rcParams.update({"font.family": "DejaVu Sans", "figure.facecolor": PALETTE["ink"], "savefig.facecolor": PALETTE["ink"]})
@@ -62,6 +64,51 @@ def main() -> None:
     colorbar.set_label("Association normalisée", color=PALETTE["text"])
     fig.tight_layout()
     fig.savefig(output / "gse4987-association-heatmap.png", dpi=180)
+    plt.close(fig)
+
+    steps = [item["step"] for item in resilience["trajectory"]]
+    observed = [item["observed_topology"]["psig"] for item in resilience["trajectory"]]
+    core = [item["consensus_core_topology"]["psig"] for item in resilience["trajectory"]]
+    threshold = resilience["resilience"]["collapse_threshold_P_sig"]
+    baseline_psig = resilience["baseline"]["P_sig"]
+    fig, axis = plt.subplots(figsize=(8.8, 5.2))
+    style(axis)
+    axis.plot(steps, observed, marker="D", linewidth=2.5, color=PALETTE["coral"], label="P_sig observé bruité")
+    axis.plot(steps, core, marker="o", linewidth=2.5, color=PALETTE["mint"], label="P_sig noyau consensus")
+    axis.axhline(baseline_psig, color=PALETTE["blue"], linestyle=":", label="P_sig Berlin52 source")
+    axis.axhline(threshold, color="#f2c14e", linestyle="--", label="Seuil de rupture déclaré")
+    axis.set_title("Berlin52 — résilience topologique sous dérive et bruit d’observation")
+    axis.set_xlabel("Pas de dérive")
+    axis.set_ylabel("P_sig calculé")
+    axis.set_xticks(steps)
+    legend = axis.legend(frameon=False, fontsize=8)
+    for text in legend.get_texts(): text.set_color(PALETTE["text"])
+    fig.tight_layout()
+    fig.savefig(output / "berlin52-topology-resilience.png", dpi=180)
+    plt.close(fig)
+
+    drift_rms = [item["injected"]["coordinate_rms_from_source"] for item in resilience["trajectory"]]
+    false_edges = [item["injected"]["false_edges_injected"] for item in resilience["trajectory"]]
+    noise_std = [item["injected"]["association_gaussian_std"] for item in resilience["trajectory"]]
+    fig, left = plt.subplots(figsize=(8.8, 5.2))
+    style(left)
+    right = left.twinx()
+    right.tick_params(colors=PALETTE["muted"])
+    right.spines["right"].set_color("#315063")
+    left.plot(steps, drift_rms, marker="o", linewidth=2.5, color=PALETTE["blue"], label="RMS de dérive coordonnée")
+    left.plot(steps, noise_std, marker="D", linewidth=2.5, color=PALETTE["coral"], label="Écart-type bruit association")
+    right.bar(steps, false_edges, color=PALETTE["mint"], alpha=0.5, label="Fausses arêtes injectées")
+    left.set_title("Berlin52 — injection déclarée, sans modification de la baseline")
+    left.set_xlabel("Pas de dérive")
+    left.set_ylabel("Amplitude déclarée")
+    right.set_ylabel("Nombre de fausses arêtes", color=PALETTE["text"])
+    left.set_xticks(steps)
+    lines = left.lines + right.containers
+    labels = [line.get_label() for line in left.lines] + [container.get_label() for container in right.containers]
+    legend = left.legend(lines, labels, frameon=False, loc="upper left", fontsize=8)
+    for text in legend.get_texts(): text.set_color(PALETTE["text"])
+    fig.tight_layout()
+    fig.savefig(output / "berlin52-drift-injection.png", dpi=180)
     plt.close(fig)
 
 
