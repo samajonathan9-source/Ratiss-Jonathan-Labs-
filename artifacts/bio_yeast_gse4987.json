@@ -1017,7 +1017,8 @@
       "two_qubit_depolarizing": 0.01,
       "edge_threshold": 0.04,
       "criticality_threshold": 0.38,
-      "rips_max_edge": null
+      "rips_max_edge": null,
+      "correlation_noise": 0.1
     },
     "cube": {
       "axes": [
